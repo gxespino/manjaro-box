@@ -1,0 +1,92 @@
+# easy to navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias .....='cd ../../../..'
+alias ~='cd ~'
+alias -- -='cd -'
+
+# easy report
+alias cp='cp -iv'
+alias mv='mv -iv'
+alias rm='rm -i'
+alias rmf='rm -rf'
+alias p='ps axo pid,user,pcpu,comm'
+alias df='df -h | grep sd |\
+    sed -e "s_/dev/sda[1-9]_\x1b[34m&\x1b[0m_" |\
+    sed -e "s_/dev/sd[b-z][1-9]_\x1b[33m&\x1b[0m_" |\
+    sed -e "s_[,0-9]*[MG]_\x1b[36m&\x1b[0m_" |\
+    sed -e "s_[0-9]*%_\x1b[32m&\x1b[0m_" |\
+    sed -e "s_9[0-9]%_\x1b[31m&\x1b[0m_" |\
+    sed -e "s_/mnt/[-_A-Za-z0-9]*_\x1b[34;1m&\x1b[0m_"'
+alias disk='df'
+alias alu='apt list --upgradable'
+
+# bookmarks
+alias dl='cd ~/Downloads; la'
+alias doc='cd ~/Documents; la'
+alias docs='cd ~/Documents; la'
+alias tmp='cd ~/Temporary; la'
+
+# shortcuts
+alias c='clear'
+alias e='exit'
+alias fresh='cd . && terminal && quit'
+alias gpg='gpg2'
+alias incognito='unset HISTFILE'
+alias ln='ln -s'
+alias pbcopy='xclip -selection clipboard'
+alias pbpaste='xclip -selection clipboard -o'
+alias timer='echo "Timer started. Stop with Ctrl-D." && date "+%a, %d %b %H:%M:%S" && time cat && date "+%a, %d %b %H:%M:%S"'
+alias weather='curl -s wttr.in/Arlington | sed -n "1,17p"'
+
+# developer shortcuts
+alias g='git'
+alias git-pull-dir='find . -mindepth 1 -maxdepth 1 -type d -print -exec git -C {} pull \;'
+alias v='nvim'
+
+# typos
+alias :q='exit'
+alias help='man'
+alias nano='vim'
+alias quit='exit'
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto --group-directories-first'
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# easily edit dotfiles
+alias arc="cd . && vim .aliases"
+alias erc="cd . && vim .exports"
+alias brc="cd . && vim .bashrc"
+alias vrc="cd . && vim .vimrc"
+alias trc="cd . && vim .tmux.conf"
+alias zrc="cd . && vim .zshrc"
+
+# easy $PATH display
+alias path="echo '$PATH' | tr ':' '\n'"
+
+#########################
+## Rails
+##########################
+alias rs="rails s"
+alias rt='rake test'
+alias rubocop="rubocop -Dc .rubocop.yml"
+alias rubocop-a="rubocop -Dc .rubocop.yml -a"
+alias freshdb='rake db:drop db:create db:migrate db:seed'
+alias freshdbt='rake db:drop db:create db:migrate RAILS_ENV=test'
+alias rs='rails s -b 0.0.0.0'
+alias rc='rubocop -Dc .rubocop.yml'
+
+##########################
+## GIT
+##########################
+alias gp="git pull origin master"
+alias prune="prune-l && prune-r"
+alias prune-l="git branch --merged master | grep -v master | xargs -n 1 git branch -d"
+alias prune-r="git branch --merged master | grep -v master | cut -d/ -f2- | xargs -n 1 git push --delete origin"

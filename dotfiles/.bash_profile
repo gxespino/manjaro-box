@@ -1,0 +1,1 @@
+/home/glenn/manjaro-box/.bash_profile

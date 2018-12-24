@@ -47,6 +47,14 @@ Things to install/script away eventually:
 - Update grub
 `sudo update-grub`
 
+- Add github key
+- Add nitrogen and wallpapers
+- Install wallpaper
+- Powerline?
+- Allow commands to fail?
+- Fix symlinks
+- Setup backup folder
+
 # PERSONAL APPS
 
 - Install Chromium
@@ -89,3 +97,6 @@ Things to install/script away eventually:
 `asdf global ruby 2.5.0`
 `gem install bundler`
 `gem install rake`
+
+- Install Vundle
+`git clone https://github.com/VundleVim/Vundle.vim.git ~/.vim/bundle/Vundle.vim`

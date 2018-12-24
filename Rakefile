@@ -44,12 +44,35 @@ def link_file(original_filename, symlink_filename)
   ln_s original_path, symlink_path, :verbose => true
 end
 
+def unlink_file(original_filename, symlink_filename)
+  original_path = File.expand_path(original_filename)
+  symlink_path = File.expand_path(symlink_filename)
+  if File.symlink?(symlink_path)
+    symlink_points_to_path = File.readlink(symlink_path)
+    if symlink_points_to_path == original_path
+      # the symlink is installed, so we should uninstall it
+      rm_f symlink_path, :verbose => true
+      backups = Dir["#{symlink_path}*.bak"]
+      case backups.size
+      when 0
+        # nothing to do
+      when 1
+        mv backups.first, symlink_path, :verbose => true
+      else
+        $stderr.puts "found #{backups.size} backups for #{symlink_path}, please restore the one you want."
+      end
+    else
+      $stderr.puts "#{symlink_path} does not point to #{original_path}, skipping."
+    end
+  else
+    $stderr.puts "#{symlink_path} is not a symlink, skipping."
+  end
+end
+
+
 namespace :install do
   # LINUX CONFIGURATIONS
 
-  puts 'Configuring Linux...'
-  puts
-  
   desc 'Add read/write access to user'
   task :read_write_access do
     step 'Add read/write access to user'
@@ -81,38 +104,25 @@ namespace :install do
   end
 
   desc 'Update system and all packages'
-  task :update_system do
+  task :updates do
     step 'Update system and all packages'
     sh 'sudo pacman -Syyu; yaourt -Syua && yaourt -Syua --devel --needed'
   end
 
   desc 'Install codecs and multimedia plugins for videos/music'
-  task :install_codecs do
+  task :codecs do
     step 'Install codecs and multimedia plugins for videos/music'
-    sh `sudo pacman -S exfat-utils fuse-exfat a52dec faac faad2 flac jasper lame libdca libdv gst-libav libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore flashplugin libdvdcss libdvdread libdvdnav dvd+rw-tools dvdauthor dvgrab`
+    sh 'sudo pacman -S exfat-utils fuse-exfat a52dec faac faad2 flac jasper lame libdca libdv gst-libav libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore flashplugin libdvdcss libdvdread libdvdnav dvd+rw-tools dvdauthor dvgrab'
   end
 
   desc 'Install printer essentials'
-  task :install_printer_essentials do
+  task :printer_essentials do
     step 'Install printer essentials'
     sh 'sudo pacman -S lib32-libcups cups gutenprint libpaper foomatic-db-engine ghostscript gsfonts foomatic-db cups-pdf system-config-printer'
     sh 'sudo systemctl enable org.cups.cupsd.service'
     sh 'sudo systemctl enable cups-browsed.service'
     sh 'sudo systemctl start  org.cups.cupsd.service'
     sh 'sudo systemctl start  cups-browsed.service'
-  end
-
-  desc 'Disable PC Speaker'
-  task :disable_pc_speaker do
-    step 'Disable PC Speaker'
-    sh 'sudo rmmod pcspkr'
-    sh "echo 'blacklist pcspkr' > /etc/modprobe.d/nobeep.conf"
-  end
-
-  desc 'Disable memory card reader for less power consumption during sleep'
-  task :disable_mem_card do
-    step 'Disable memory card reader for less power consumption during sleep'
-    sh "echo '2-3' | sudo tee /sys/bus/usb/drivers/usb/unbind"
   end
 
   desc 'Enable Lenovo throttling fix'
@@ -138,113 +148,117 @@ namespace :install do
 
   # PERSONAL APPS
 
-  puts 'Installing Personal Apps...'
-  puts
-
   desc 'Install Chromium'
-  task :install_chromium do
+  task :chromium do
     step 'Install Chromium'
     sh 'sudo pacman -Syu && sudo pacman -S chromium'
   end
 
   desc 'Set Chromium as default browser'
-  task :default_broswer do
+  task :default_browser do
     step 'Set Chromium as default browser'
-    sh 'xdg-settings set default-web-browser chromium.desktop' 
+    sh 'sudo xdg-settings set default-web-browser chromium.desktop' 
     sh "echo '$BROWSER=/usr/bin/chromium' >> $HOME/.profile"
   end
 
   desc 'Install Spotify'
-  task :install_spotify do
+  task :spotify do
     step 'Install Spotify'
     sh 'yaourt -S spotify'
   end
 
-
   # EDITOR/DOTFILES
 
-  puts 'Configuring Editor & Dotfiles...'
-  puts
+  desc 'Install terminator terminal'
+  task :terminator do
+    step 'Install terminator terminal'
+    sh 'sudo pacman -Syyu terminator'
+  end
 
   desc 'Install Vim'
   task :vim do
     step 'vim'
-    sh 'sudo apt-get install vim'
+    sh 'sudo pacman -Syyu vim'
   end
 
   desc 'Install tmux'
   task :tmux do
     step 'tmux'
-    sh 'sudo apt-get install tmux'
-  end
-
-  desc 'Install ctags'
-  task :ctags do
-    step 'ctags'
-    sh 'sudo apt-get install ctags'
-  end
-
-  # https://github.com/ggreer/the_silver_searcher
-  desc 'Install The Silver Searcher'
-  task :the_silver_searcher do
-    step 'the_silver_searcher'
-    sh 'sudo apt-get install build-essential automake pkg-config libpcre3-dev zlib1g-dev liblzma-dev'
-    sh 'git clone https://github.com/ggreer/the_silver_searcher.git'
-    Dir.chdir 'the_silver_searcher' do
-      sh './build.sh'
-      sh 'sudo make install'
-    end
-  end
-
-  # instructions from http://www.webupd8.org/2011/04/solarized-must-have-color-paletter-for.html
-  desc 'Install Solarized and fix ls'
-  task :solarized, :arg1 do |t, args|
-    args[:arg1] = "dark" unless ["dark", "light"].include? args[:arg1]
-    color = ["dark", "light"].include?(args[:arg1]) ? args[:arg1] : "dark"
-
-    step 'solarized'
-    sh 'git clone https://github.com/sigurdga/gnome-terminal-colors-solarized.git' unless File.exist? 'gnome-terminal-colors-solarized'
-    Dir.chdir 'gnome-terminal-colors-solarized' do
-      sh "./solarize #{color}"
-    end
-
-    step 'fix ls-colors'
-    Dir.chdir do
-      sh "wget --no-check-certificate https://raw.github.com/seebi/dircolors-solarized/master/dircolors.ansi-#{color}"
-      sh "mv dircolors.ansi-#{color} .dircolors"
-      sh 'eval `dircolors .dircolors`'
-    end
+    sh 'sudo pacman -Syyu tmux'
   end
 end
 
+namespace :disable do
+  desc 'Disable PC Speaker'
+  task :pc_speaker do
+    step 'Disable PC Speaker'
+    sh 'sudo rmmod pcspkr'
+    sh "sudo echo 'blacklist pcspkr' > /etc/modprobe.d/nobeep.conf"
+  end
+
+  desc 'Disable memory card reader for less power consumption during sleep'
+  task :mem_card do
+    step 'Disable memory card reader for less power consumption during sleep'
+    sh "sudo echo '2-3' | sudo tee /sys/bus/usb/drivers/usb/unbind"
+  end
+end
+
+DOTFILES = [
+    '.aliases',
+    '.bash_profile',
+    '.bash_prompt',
+    '.bashrc',
+    '.exports',
+    '.gitconfig',
+    '.tmux.conf',
+    '.vimrc',
+    '.zshrc'
+]
+
 desc 'Install these config files.'
 task :default do
-  Rake::Task['install:update'].invoke
-  Rake::Task['install:vim'].invoke
-  Rake::Task['install:tmux'].invoke
-  Rake::Task['install:ctags'].invoke
-  Rake::Task['install:the_silver_searcher'].invoke
+  Rake::Task['install:read_write_access'].invoke
+  # Rake::Task['install:configure_pacman'].invoke
+  # Rake::Task['install:remove_palemoon'].invoke
+  # Rake::Task['install:disable_cont_trim'].invoke
+  # Rake::Task['install:yaourt'].invoke
+  # Rake::Task['install:updates'].invoke
+  # Rake::Task['install:codecs'].invoke
+  # Rake::Task['install:printer_essentials'].invoke
+  # Rake::Task['install:lenovo_throttling_fix'].invoke
+  # Rake::Task['install:grub'].invoke
+  # Rake::Task['install:remap_caps_lock'].invoke
+  # Rake::Task['install:chromium'].invoke
+  # Rake::Task['install:default_browser'].invoke
+  # Rake::Task['install:spotify'].invoke
+  # Rake::Task['install:terminator'].invoke
+  # Rake::Task['install:vim'].invoke
+  # Rake::Task['install:tmux'].invoke
 
+  # Rake::Task['disable:pc_speaker'].invoke
+  # Rake::Task['disable:mem_card'].invoke
+  
   step 'git submodules'
   sh 'git submodule update --init'
 
-  # TODO install gem ctags?
-  # TODO run gem ctags?
+  step 'symlink dotfiles'
 
-  step 'symlink'
-  link_file 'vim'       , '~/.vim'
-  link_file 'tmux.conf' , '~/.tmux.conf'
-  link_file 'vimrc'     , '~/.vimrc'
-  unless File.exist?(File.expand_path('~/.vimrc.local'))
-    cp File.expand_path('vimrc.local'), File.expand_path('~/.vimrc.local'), :verbose => true
+  DOTFILES.each do |file|
+    link_file "#{file}", "~/manjaro-box/dotfiles/#{file}"
   end
 
-  step 'solarized dark or light'
-  puts
-  puts " You're almost done! Inside of the maximum-awesome-linux directory, do: "
-  puts "   rake install:solarized['dark'] "
-  puts "     or                           "
-  puts "   rake install:solarized['light']"
+  step 'symlink i3 config'
+  link_file 'i3/config', '~/.config/i3/config'
+end
 
-  puts " You may need to close your terminal and re-open it for it to take effect."
+desc 'Uninstall these config files.'
+task :uninstall do
+  step 'un-symlink'
+
+  # un-symlink files that still point to the installed locations
+  DOTFILES.each do |file|
+    unlink_file "#{file}", "~/#{file}"
+  end
+
+  unlink_file 'i3/config', '~/.config/i3/config'
 end
