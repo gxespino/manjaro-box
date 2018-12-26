@@ -82,13 +82,13 @@ namespace :install do
   desc 'Configure Pacman mirrors to use local mirrors'
   task :configure_pacman do
     step 'Configure Pacman mirrors to use local mirrors'
-    sh 'sudo pacman-mirrors -g && sudo pacman -Syyu'
+    sh 'sudo pacman-mirrors -g --noconfirm && sudo pacman -Syyu'
   end
 
   desc 'Remove palemoon browser'
   task :remove_palemoon do
     step 'Remove palemoon browser'
-    sh "sudo pacman -Qsq '^palemoon' | sudo pacman -R -"
+    sh "sudo pacman --noconfirm -Qsq '^palemoon' | sudo pacman -R -"
   end
 
   desc 'Disable continuous trim for SSD drives'
@@ -97,28 +97,28 @@ namespace :install do
     sh 'sudo systemctl enable fstrim.timer'
   end
 
-  desc 'Install arch package manager Yaourt'
-  task :yaourt do
-    step 'Install arch package manager Yaourt'
-    sh 'sudo pacman -Sy yaourt'
+  desc 'Install arch package manager Yay'
+  task :yay do
+    step 'Install arch package manager Yay'
+    sh 'sudo pacman -S --noconfirm yay'
   end
 
   desc 'Update system and all packages'
   task :updates do
     step 'Update system and all packages'
-    sh 'sudo pacman -Syyu; yaourt -Syua && yaourt -Syua --devel --needed'
+    sh 'sudo pacman -Syyu; yay -Syua && yay -Syua --devel --needed'
   end
 
   desc 'Install codecs and multimedia plugins for videos/music'
   task :codecs do
     step 'Install codecs and multimedia plugins for videos/music'
-    sh 'sudo pacman -S exfat-utils fuse-exfat a52dec faac faad2 flac jasper lame libdca libdv gst-libav libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore flashplugin libdvdcss libdvdread libdvdnav dvd+rw-tools dvdauthor dvgrab'
+    sh 'sudo pacman -S --noconfirm exfat-utils fuse-exfat a52dec faac faad2 flac jasper lame libdca libdv gst-libav libmad libmpeg2 libtheora libvorbis libxv wavpack x264 xvidcore flashplugin libdvdcss libdvdread libdvdnav dvd+rw-tools dvdauthor dvgrab'
   end
 
   desc 'Install printer essentials'
   task :printer_essentials do
     step 'Install printer essentials'
-    sh 'sudo pacman -S lib32-libcups cups gutenprint libpaper foomatic-db-engine ghostscript gsfonts foomatic-db cups-pdf system-config-printer'
+    sh 'sudo pacman -S --noconfirm lib32-libcups cups gutenprint libpaper foomatic-db-engine ghostscript gsfonts foomatic-db cups-pdf system-config-printer'
     sh 'sudo systemctl enable org.cups.cupsd.service'
     sh 'sudo systemctl enable cups-browsed.service'
     sh 'sudo systemctl start  org.cups.cupsd.service'
@@ -164,7 +164,7 @@ namespace :install do
   desc 'Install Spotify'
   task :spotify do
     step 'Install Spotify'
-    sh 'yaourt -S spotify'
+    sh 'yay -S --noconfirm spotify'
   end
 
   # EDITOR/DOTFILES
@@ -221,7 +221,7 @@ task :default do
   # Rake::Task['install:configure_pacman'].invoke
   # Rake::Task['install:remove_palemoon'].invoke
   # Rake::Task['install:disable_cont_trim'].invoke
-  # Rake::Task['install:yaourt'].invoke
+  # Rake::Task['install:yay'].invoke
   # Rake::Task['install:updates'].invoke
   # Rake::Task['install:codecs'].invoke
   # Rake::Task['install:printer_essentials'].invoke
